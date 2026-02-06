@@ -1,0 +1,341 @@
+/* Floorp Horizontal Tabs — CSS
+ * Injected as <style> element by autoconfig.cfg */
+
+/* ================================================================
+   Configuration
+   ================================================================ */
+
+:root {
+  --htabs-panel-height: 120px;
+  --htabs-row-height: 40px;
+
+  --htabs-pinned-cell: 40px;
+  --htabs-pinned-icon: 28px;
+  --htabs-pinned-min-width: 200px;
+
+  --htabs-tab-width: 150px;
+  --htabs-tab-height: 40px;
+  --htabs-firstcol-pad: 14px;
+
+  --htabs-selected: rgba(100, 140, 110, 0.30);
+  --htabs-selected-pinned: rgba(100, 140, 110, 0.25);
+  --htabs-hover: rgba(180, 170, 100, 0.20);
+  --htabs-hover-accent: rgba(180, 170, 100, 0.30);
+  --htabs-border: rgba(128, 128, 128, 0.3);
+  --htabs-border-accent: rgba(128, 128, 128, 0.5);
+  --htabs-newtab-bg: rgba(255, 255, 255, 0.04);
+
+  --htabs-ctrl-button: 38px;
+}
+
+/* ================================================================
+   Toolbar & top-level containers
+   ================================================================ */
+
+#TabsToolbar {
+  visibility: visible !important;
+  height: auto !important;
+  border-bottom: 1px solid var(--htabs-border-accent) !important;
+}
+
+#vertical-tabs {
+  width: 100% !important;
+  height: var(--htabs-panel-height) !important;
+}
+
+#tabbrowser-tabs {
+  flex-direction: row !important;
+  height: var(--htabs-panel-height) !important;
+}
+
+/* ================================================================
+   Pinned tabs container
+   ================================================================ */
+
+#pinned-tabs-container {
+  margin-left: 2px !important;
+  height: var(--htabs-panel-height) !important;
+  max-height: var(--htabs-panel-height) !important;
+  min-width: var(--htabs-pinned-min-width) !important;
+  overflow: hidden !important;
+}
+
+#pinned-tabs-container::part(scrollbutton-up),
+#pinned-tabs-container::part(scrollbutton-down),
+#pinned-tabs-container::part(overflow-start-indicator),
+#pinned-tabs-container::part(overflow-end-indicator) {
+  display: none !important;
+}
+
+#pinned-tabs-container::part(items-wrapper) {
+  display: grid !important;
+  grid-template-rows: repeat(3, var(--htabs-pinned-cell)) !important;
+  grid-template-columns: repeat(auto-fill, var(--htabs-pinned-cell)) !important;
+  grid-auto-flow: column dense !important;
+}
+
+/* ================================================================
+   Normal tabs container (arrowscrollbox)
+   ================================================================ */
+
+#tabbrowser-arrowscrollbox {
+  width: 800px !important;
+  height: var(--htabs-panel-height) !important;
+  overflow: hidden !important;
+  margin-left: -4px !important;
+}
+
+#tabbrowser-arrowscrollbox::part(items-wrapper) {
+  display: grid !important;
+  grid-template-rows: repeat(3, var(--htabs-tab-height)) !important;
+  grid-template-columns: calc(var(--htabs-tab-width) + var(--htabs-firstcol-pad)) repeat(5, var(--htabs-tab-width)) !important;
+  grid-auto-flow: column dense !important;
+}
+
+#tabbrowser-arrowscrollbox::part(scrollbutton-up),
+#tabbrowser-arrowscrollbox::part(scrollbutton-down),
+#tabbrowser-arrowscrollbox::part(overflow-start-indicator),
+#tabbrowser-arrowscrollbox::part(overflow-end-indicator) {
+  display: none !important;
+}
+
+#tabbrowser-arrowscrollbox-periphery {
+  display: none !important;
+}
+
+/* ================================================================
+   Pinned tab
+   ================================================================ */
+
+.tabbrowser-tab[pinned] {
+  height: var(--htabs-pinned-cell) !important;
+  width: var(--htabs-pinned-cell) !important;
+  max-width: var(--htabs-pinned-cell) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.tabbrowser-tab[pinned] .tab-label-container {
+  display: none !important;
+}
+
+.tabbrowser-tab[pinned] .tab-icon-stack,
+.tabbrowser-tab[pinned] .tab-icon-image {
+  width: var(--htabs-pinned-icon) !important;
+  height: var(--htabs-pinned-icon) !important;
+}
+
+.tabbrowser-tab[pinned] img.tab-icon-image {
+  object-fit: contain !important;
+}
+
+.tabbrowser-tab[pinned] .tab-content {
+  padding: 0 !important;
+  justify-content: center !important;
+}
+
+.tabbrowser-tab[pinned] .tab-background,
+.tabbrowser-tab[pinned] .tab-stack::before {
+  display: none !important;
+}
+
+.tabbrowser-tab[pinned][selected] {
+  background: var(--htabs-selected-pinned) !important;
+}
+
+.tabbrowser-tab[pinned]:hover {
+  background: var(--htabs-hover) !important;
+}
+
+/* ================================================================
+   Normal tab
+   ================================================================ */
+
+.tabbrowser-tab:not([pinned]) {
+  width: var(--htabs-tab-width) !important;
+  min-width: var(--htabs-tab-width) !important;
+  max-width: var(--htabs-tab-width) !important;
+  height: var(--htabs-tab-height) !important;
+  border-top: none !important;
+  border-bottom: 1px solid var(--htabs-border) !important;
+  border-right: 1px solid var(--htabs-border) !important;
+  border-left: none !important;
+  margin-left: -1px !important;
+  margin-right: -1px !important;
+}
+
+/* Убрать нижнюю границу у третьей строки */
+.tabbrowser-tab:not([pinned]):nth-child(3n+3) {
+  border-bottom: none !important;
+}
+
+.tabbrowser-tab:not([pinned]) .tab-background,
+.tabbrowser-tab:not([pinned]) .tab-stack::before {
+  display: none !important;
+}
+
+.tabbrowser-tab:not([pinned]) .tab-content {
+  padding: 0 !important;
+}
+
+.tabbrowser-tab:not([pinned]) .tab-icon-stack {
+  margin-right: 6px !important;
+  margin-left: 2px !important;
+  overflow: hidden !important;
+}
+
+.tabbrowser-tab:not([pinned]) .tab-close-button {
+  margin-right: 6px !important;
+  padding: 2px !important;
+  overflow: hidden !important;
+  display: none !important;
+}
+
+.tabbrowser-tab:not([pinned]):hover .tab-close-button {
+  display: flex !important;
+}
+
+.tabbrowser-tab:not([pinned])[selected] {
+  background: var(--htabs-selected) !important;
+  border-radius: 0 !important;
+  outline: none !important;
+}
+
+.tabbrowser-tab:not([pinned]):hover {
+  background: var(--htabs-hover) !important;
+}
+
+.tabbrowser-tab:not([pinned]):not([fadein]) {
+  display: none !important;
+}
+
+/* First column: extended width with gradient from splitter */
+.tabbrowser-tab:not([pinned]):nth-child(-n+3) {
+  width: calc(var(--htabs-tab-width) + var(--htabs-firstcol-pad)) !important;
+  min-width: calc(var(--htabs-tab-width) + var(--htabs-firstcol-pad)) !important;
+  max-width: calc(var(--htabs-tab-width) + var(--htabs-firstcol-pad)) !important;
+  padding-left: var(--htabs-firstcol-pad) !important;
+  background-image: linear-gradient(to right, var(--htabs-border), transparent var(--htabs-firstcol-pad)) !important;
+}
+
+.tabbrowser-tab:not([pinned]):nth-child(-n+3)[selected] {
+  background: linear-gradient(to right, var(--htabs-border), var(--htabs-selected) var(--htabs-firstcol-pad)) var(--htabs-selected) !important;
+}
+
+.tabbrowser-tab:not([pinned]):nth-child(-n+3):hover {
+  background: linear-gradient(to right, var(--htabs-border), var(--htabs-hover) var(--htabs-firstcol-pad)) var(--htabs-hover) !important;
+}
+
+/* ================================================================
+   Splitter
+   ================================================================ */
+
+#vertical-pinned-tabs-splitter {
+  margin: 0 4px !important;
+  height: var(--htabs-panel-height) !important;
+  border: none !important;
+  border-right: 1px solid var(--htabs-border-accent) !important;
+  cursor: ew-resize !important;
+  outline: none !important;
+}
+
+/* ================================================================
+   Window controls
+   ================================================================ */
+
+#nav-bar > .titlebar-buttonbox-container {
+  display: none !important;
+}
+
+#floorp-tabbar-window-manage-container {
+  align-self: flex-start !important;
+  height: auto !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: 0 !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 4px !important;
+}
+
+#floorp-tabbar-window-manage-container::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 0;
+  bottom: -96px;
+  border-left: 1px solid var(--htabs-border-accent);
+}
+
+#floorp-tabbar-window-manage-container .titlebar-buttonbox {
+  height: auto !important;
+}
+
+#floorp-tabbar-window-manage-container .titlebar-button {
+  width: var(--htabs-ctrl-button) !important;
+  max-width: var(--htabs-ctrl-button) !important;
+  min-width: var(--htabs-ctrl-button) !important;
+}
+
+#floorp-tabbar-window-manage-container .titlebar-close {
+  padding: 0 9px !important;
+}
+
+/* ================================================================
+   New tab button
+   ================================================================ */
+
+#vertical-tabs-newtab-button {
+  display: flex !important;
+  order: 999 !important;
+  border-right: none !important;
+  padding: 0 8px !important;
+  max-width: 42px !important;
+  margin-left: -5px !important;
+  margin-right: 1px !important;
+  border-radius: 0 !important;
+  background: linear-gradient(to right, transparent 0px, var(--htabs-newtab-bg) 10px) !important;
+  height: var(--htabs-panel-height) !important;
+  min-height: var(--htabs-panel-height) !important;
+  position: relative !important;
+}
+
+#vertical-tabs-newtab-button::before {
+  display: none !important;
+}
+
+#vertical-tabs-newtab-button:hover {
+  background: var(--htabs-hover-accent) !important;
+}
+
+#vertical-tabs-newtab-button:hover .toolbarbutton-icon {
+  background: transparent !important;
+}
+
+#vertical-tabs-newtab-button .toolbarbutton-icon {
+  width: 42px !important;
+  height: 42px !important;
+}
+
+#vertical-tabs-newtab-button[data-htabs-hidden] {
+  display: none !important;
+}
+
+/* ================================================================
+   Sidebar (positioned inside TabsToolbar by JS)
+   ================================================================ */
+
+#TabsToolbar #sidebar-main,
+#tabbrowser-tabs #sidebar-main {
+  flex-direction: row !important;
+  width: 114px !important;
+  min-width: 114px !important;
+  height: 95px !important;
+  max-height: 95px !important;
+  overflow: hidden !important;
+  order: 999 !important;
+  border-right: 1px solid var(--htabs-border-accent) !important;
+  padding-right: 8px !important;
+  border-top: 1px solid var(--htabs-border-accent) !important;
+  margin-top: 25px !important;
+}
