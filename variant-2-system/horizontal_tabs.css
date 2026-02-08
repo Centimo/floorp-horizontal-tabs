@@ -79,7 +79,8 @@
    ================================================================ */
 
 #tabbrowser-arrowscrollbox {
-  width: 800px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
   height: var(--htabs-panel-height) !important;
   overflow: hidden !important;
   margin-left: -4px !important;
@@ -88,7 +89,7 @@
 #tabbrowser-arrowscrollbox::part(items-wrapper) {
   display: grid !important;
   grid-template-rows: repeat(3, var(--htabs-tab-height)) !important;
-  grid-template-columns: calc(var(--htabs-tab-width) + var(--htabs-firstcol-pad)) repeat(5, var(--htabs-tab-width)) !important;
+  grid-template-columns: repeat(auto-fill, var(--htabs-tab-width)) !important;
   grid-auto-flow: column dense !important;
 }
 
@@ -209,11 +210,8 @@
   display: none !important;
 }
 
-/* First column: extended width with gradient from splitter */
+/* First column: gradient from splitter */
 .tabbrowser-tab:not([pinned]):nth-child(-n+3) {
-  width: calc(var(--htabs-tab-width) + var(--htabs-firstcol-pad)) !important;
-  min-width: calc(var(--htabs-tab-width) + var(--htabs-firstcol-pad)) !important;
-  max-width: calc(var(--htabs-tab-width) + var(--htabs-firstcol-pad)) !important;
   padding-left: var(--htabs-firstcol-pad) !important;
   background-image: linear-gradient(to right, var(--htabs-border), transparent var(--htabs-firstcol-pad)) !important;
 }
