@@ -1,129 +1,131 @@
-# Архитектура (variant-2-system)
+# Architecture (variant-2-system)
 
-## Почему autoconfig.cfg, а не userChrome.css / WebExtension
+[Документация на русском / Russian version](ARCHITECTURE.ru.md)
 
-| Подход | Проблема |
+## Why autoconfig.cfg instead of userChrome.css / WebExtension
+
+| Approach | Problem |
 |---|---|
-| **userChrome.css** | Не может менять XUL-атрибут `orient`, переносить элементы в DOM, стилизовать внутренности Shadow DOM напрямую |
-| **WebExtension** | API не предоставляет доступ к XUL DOM браузера. Невозможно модифицировать `#tabbrowser-tabs`, `#pinned-tabs-container` и другие chrome-элементы |
-| **autoconfig.cfg** | Выполняется в привилегированном chrome-контексте с полным доступом к DOM, XPCOM, Services. Единственный способ без форка браузера |
+| **userChrome.css** | Cannot change the XUL `orient` attribute, relocate DOM elements, or style Shadow DOM internals directly |
+| **WebExtension** | API does not provide access to the browser's XUL DOM. Cannot modify `#tabbrowser-tabs`, `#pinned-tabs-container`, or other chrome elements |
+| **autoconfig.cfg** | Runs in privileged chrome context with full access to DOM, XPCOM, and Services. The only approach without forking the browser |
 
-## Механизм загрузки
+## Loading mechanism
 
 ```
-[Старт Floorp]
+[Floorp startup]
   │
-  ├─ Читает /usr/lib/floorp/defaults/pref/autoconfig.js
+  ├─ Reads /usr/lib/floorp/defaults/pref/autoconfig.js
   │    └─ pref("general.config.filename", "autoconfig.cfg")
   │
-  ├─ Выполняет /usr/lib/floorp/autoconfig.cfg (однократно, глобально)
-  │    ├─ Читает horizontal_tabs.css в переменную
-  │    └─ Регистрирует observer на "chrome-document-global-created"
+  ├─ Executes /usr/lib/floorp/autoconfig.cfg (once, globally)
+  │    ├─ Reads horizontal_tabs.css into a variable
+  │    └─ Registers observer for "chrome-document-global-created"
   │
-  └─ [Открытие каждого окна браузера]
+  └─ [Each browser window opening]
        │
-       ├─ Observer получает событие
+       ├─ Observer fires
        ├─ waitForElement(#tabbrowser-tabs, 5s)
        └─ initHorizontalTabs(doc, win)
             ├─ Feature detection (sidebar.verticalTabs)
-            ├─ Запуск 8 модулей последовательно
-            └─ Регистрация unload-очистки
+            ├─ Runs 8 modules sequentially
+            └─ Registers unload cleanup
 ```
 
-## Модули
+## Modules
 
-Каждый модуль — отдельная функция `module*(doc, win, cleanup)`. Падение одного модуля (try/catch) не затрагивает остальные. Модули, создающие MutationObserver или event listener, регистрируют cleanup-callback для очистки при закрытии окна.
+Each module is a standalone function `module*(doc, win, cleanup)`. A failure in one module (try/catch) does not affect the others. Modules that create MutationObservers or event listeners register cleanup callbacks that run when the window closes.
 
 ### 1. moduleInjectCSS
 
-Инжектирует содержимое `horizontal_tabs.css` как элемент `<style id="htabs-styles">` в `document.head`. Проверяет дубликат перед вставкой.
+Injects the contents of `horizontal_tabs.css` as a `<style id="htabs-styles">` element in `document.head`. Checks for duplicates before insertion.
 
 ### 2. moduleOrientFix
 
-Устанавливает `orient="horizontal"` на четырёх контейнерах (`pinned-tabs-container`, `tabbrowser-tabs`, `tabbrowser-arrowscrollbox`, `vertical-pinned-tabs-splitter`).
+Sets `orient="horizontal"` on four containers (`pinned-tabs-container`, `tabbrowser-tabs`, `tabbrowser-arrowscrollbox`, `vertical-pinned-tabs-splitter`).
 
-**Проблема:** Floorp сбрасывает `orient` обратно в `"vertical"` после нашей инициализации.
-**Решение:** MutationObserver на атрибуте `orient` — при изменении принудительно возвращает `"horizontal"`.
+**Problem:** Floorp resets `orient` back to `"vertical"` after our initialization.
+**Solution:** MutationObserver on the `orient` attribute — forces `"horizontal"` on any change.
 
 ### 3. moduleInlineStyles
 
-Устанавливает `height` и `max-height` через `style.setProperty()` на контейнерах вкладок. Необходимо потому, что Firefox/Floorp применяет собственные inline-стили с высоким приоритетом, которые CSS `!important` из `<style>` не может переопределить.
+Sets `height` and `max-height` via `style.setProperty()` on tab containers. Necessary because Firefox/Floorp applies its own inline styles with high priority that CSS `!important` from a `<style>` element cannot override.
 
 ### 4. moduleShadowScrollbox
 
-Устанавливает `overflow: hidden` на элементе `<scrollbox>` внутри Shadow DOM контейнеров `#tabbrowser-arrowscrollbox` и `#pinned-tabs-container`. Элемент `<scrollbox>` не имеет атрибута `part`, поэтому CSS `::part()` до него не дотянется.
+Sets `overflow: hidden` on the `<scrollbox>` element inside the Shadow DOM of `#tabbrowser-arrowscrollbox` and `#pinned-tabs-container`. The `<scrollbox>` element has no `part` attribute, so CSS `::part()` cannot reach it.
 
 ### 5. moduleDomRelocation
 
-Переносит DOM-элементы:
-- `#vertical-tabs` → внутрь `#TabsToolbar` (из sidebar наверх)
-- `#sidebar-main` → после `#vertical-tabs-newtab-button` (кнопки расширений рядом с "+" )
+Relocates DOM elements:
+- `#vertical-tabs` → inside `#TabsToolbar` (from sidebar to top)
+- `#sidebar-main` → after `#vertical-tabs-newtab-button` (extension buttons next to "+")
 
 ### 6. moduleStyleSidebar
 
-Стилизует Shadow DOM элемента `#sidebar-main`:
+Styles the Shadow DOM of `#sidebar-main`:
 
 ```
 #sidebar-main (Light DOM)
   └─ sidebar-main (Custom Element)
        └─ shadowRoot
-            ├─ <style id="htabs-sidebar-style">  ← мы инжектируем
+            ├─ <style id="htabs-sidebar-style">  ← injected by us
             └─ .wrapper
                  ├─ .buttons-wrapper
                  │    └─ button-group
                  │         └─ moz-button × N
                  │              └─ shadowRoot
-                 │                   └─ <button>  ← стилизуем через CSS custom properties
-                 └─ splitter  ← скрываем
+                 │                   └─ <button>  ← styled via CSS custom properties
+                 └─ splitter  ← hidden
 ```
 
-**Проблема:** Inner `<button>` внутри `moz-button` имеет padding из CSS custom properties (`--button-outer-padding-*`), установленных в `chrome://global/content/elements/moz-button.css`.
-**Решение:** Обнуляем эти custom properties на `moz-button` — они наследуются внутрь его Shadow DOM.
+**Problem:** The inner `<button>` inside `moz-button` has padding from CSS custom properties (`--button-outer-padding-*`) defined in `chrome://global/content/elements/moz-button.css`.
+**Solution:** Zero out these custom properties on `moz-button` — they inherit into its Shadow DOM.
 
-**Проблема:** Floorp устанавливает `hidden=true` на `#sidebar-main` после нашей инициализации.
-**Решение:** MutationObserver на атрибуте `hidden`.
+**Problem:** Floorp sets `hidden=true` on `#sidebar-main` after our initialization.
+**Solution:** MutationObserver on the `hidden` attribute.
 
-**Проблема:** Shadow DOM sidebar может быть не готов к моменту вызова модуля.
-**Решение:** `tryApply()` — retry до 15 раз с интервалом 200мс (3 секунды).
+**Problem:** The sidebar Shadow DOM may not be ready when the module runs.
+**Solution:** `tryApply()` — retries up to 15 times at 200ms intervals (3 seconds total).
 
 ### 7. moduleTabObserver
 
-MutationObserver + resize listener для динамических задач:
+MutationObserver + resize listener for dynamic tasks:
 
-- **Удаление ghost tabs** — вкладки без атрибута `[fadein]` (закрытые, но не убранные из DOM Floorp'ом)
-- **Разметка первого столбца** — атрибут `[data-htabs-firstcol]` для CSS-градиента на левой границе
-- **Разметка последней строки** — атрибут `[data-htabs-lastrow]` для скрытия нижней границы
-- **Видимость кнопки «+»** — скрывается когда `normalTabs.length >= cols × 3`
-- **min-width pinned-контейнера** — подстраивается под количество закреплённых вкладок
+- **Ghost tab removal** — tabs without the `[fadein]` attribute (closed but not yet removed from DOM by Floorp)
+- **First column marking** — `[data-htabs-firstcol]` attribute for the CSS gradient on the left border
+- **Last row marking** — `[data-htabs-lastrow]` attribute for hiding the bottom border
+- **"+" button visibility** — hidden when `normalTabs.length >= cols × 3`
+- **Pinned container min-width** — adjusts to the number of pinned tabs
 
-Селекторы `:nth-child()` не работают для первого столбца и последней строки в `grid-auto-flow: row dense` (количество колонок динамическое), поэтому используются JS-управляемые data-атрибуты.
+`:nth-child()` selectors don't work for the first column and last row with `grid-auto-flow: row dense` (column count is dynamic), so JS-managed data attributes are used instead.
 
 ### 8. moduleTabDragFix
 
-Monkey-patch на `tabsEl.tabDragAndDrop` для drag-and-drop в 2D-сетке.
+Monkey-patch on `tabsEl.tabDragAndDrop` for drag-and-drop in a 2D grid.
 
-Firefox нативно поддерживает 2D drag-and-drop только для pinned tabs в расширенном grid-режиме (`_animateExpandedPinnedTabMove`). Для обычных вкладок используется 1D `_animateTabMove`, который не работает в нашей сетке.
+Firefox natively supports 2D drag-and-drop only for pinned tabs in expanded grid mode (`_animateExpandedPinnedTabMove`). Regular tabs use 1D `_animateTabMove`, which doesn't work in our grid.
 
-**Что патчится:**
+**What gets patched:**
 
-| Метод | Зачем |
+| Method | Purpose |
 |---|---|
-| `_isContainerVerticalPinnedGrid` | Возвращает `true` и для обычных (не pinned) вкладок — включает 2D обработку |
-| `startTabDrag` | Запоминает `_maxTabsPerRow` при начале drag |
-| `_animateExpandedPinnedTabMove` | Для обычных вкладок — собственная реализация 2D drag |
+| `_isContainerVerticalPinnedGrid` | Returns `true` for regular (non-pinned) tabs too — enables 2D handling |
+| `startTabDrag` | Stores `_maxTabsPerRow` at drag start |
+| `_animateExpandedPinnedTabMove` | Custom 2D drag implementation for regular tabs |
 
-**Алгоритм drop-позиции:**
+**Drop position algorithm:**
 
-1. Вычислить координаты курсора относительно grid origin (screenX/Y первой вкладки)
-2. Определить ячейку сетки: `col = floor(dx / tabWidth)`, `row = floor(dy / tabHeight)`
-3. Преобразовать в индекс: `newDropIdx = row * maxPerRow + col`
-4. Конвертировать виртуальный индекс в `dropFilteredIdx` (с учётом слота dragged tab)
-5. Вычислить сдвиги соседних вкладок (`getTabShift`) с учётом переноса строк
-6. Установить `dropElement` / `dropBefore` для финального `moveTabs()` Firefox
+1. Compute cursor coordinates relative to grid origin (screenX/Y of the first tab)
+2. Determine grid cell: `col = floor(dx / tabWidth)`, `row = floor(dy / tabHeight)`
+3. Convert to index: `newDropIdx = row * maxPerRow + col`
+4. Convert virtual index to `dropFilteredIdx` (accounting for the dragged tab's slot)
+5. Calculate neighbor tab shifts (`getTabShift`) with row wrapping
+6. Set `dropElement` / `dropBefore` for Firefox's final `moveTabs()`
 
-## CSS-раскладка
+## CSS layout
 
-### Обычные вкладки
+### Regular tabs
 
 ```css
 #tabbrowser-arrowscrollbox::part(items-wrapper) {
@@ -134,10 +136,10 @@ Firefox нативно поддерживает 2D drag-and-drop только д
 }
 ```
 
-`auto-fill` — количество колонок определяется доступной шириной.
-`row dense` — вкладки заполняются по строкам (слева направо, сверху вниз).
+`auto-fill` — column count is determined by available width.
+`row dense` — tabs fill left-to-right, top-to-bottom.
 
-### Закреплённые вкладки
+### Pinned tabs
 
 ```css
 #pinned-tabs-container::part(items-wrapper) {
@@ -148,9 +150,9 @@ Firefox нативно поддерживает 2D drag-and-drop только д
 }
 ```
 
-`column dense` — заполнение по столбцам (для pinned оно интуитивнее).
+`column dense` — column-first fill (more intuitive for pinned tabs).
 
-### Визуальная структура панели
+### Visual panel structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -165,30 +167,30 @@ Firefox нативно поддерживает 2D drag-and-drop только д
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Очистка ресурсов
+## Resource cleanup
 
-Все MutationObservers и event listeners регистрируются в массиве `cleanup[]`, который передаётся модулям. При закрытии окна (`win.addEventListener("unload")`) все callbacks вызываются, предотвращая memory leaks.
+All MutationObservers and event listeners are registered in a `cleanup[]` array passed to modules. When the window closes (`win.addEventListener("unload")`), all callbacks are invoked, preventing memory leaks.
 
-## Отладка
+## Debugging
 
 ### Browser Console
 
-`Ctrl+Shift+J` — все ошибки модулей выводятся с префиксом `htabs`.
+`Ctrl+Shift+J` — all module errors are logged with the `htabs` prefix.
 
 ### Remote debugging
 
-Запуск Floorp с debug-портом:
+Launch Floorp with a debug port:
 
 ```bash
 floorp --remote-debugging-port=6000
 ```
 
-Выполнение JS в chrome-контексте через скрипт `run_js.py` (не входит в проект):
+Execute JS in chrome context via `run_js.py` script (not included in the project):
 
 ```bash
 python3 run_js.py "document.getElementById('tabbrowser-tabs').getAttribute('orient')"
 ```
 
-### Диагностические prefs
+### Diagnostic prefs
 
-В `about:config` по фильтру `htabs.diag` видны стадии инициализации (описаны в README.md).
+In `about:config`, filter by `htabs.diag` to see initialization stages (described in README.md).

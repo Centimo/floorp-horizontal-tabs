@@ -1,69 +1,73 @@
 # Floorp Horizontal Tabs
 
-Кастомизация браузера [Floorp](https://floorp.app/) (форк Firefox), преобразующая вертикальную панель вкладок в горизонтальную многострочную сетку над адресной строкой.
+A [Floorp](https://floorp.app/) browser (Firefox fork) customization that transforms the vertical sidebar tab panel into a horizontal multi-row tab grid above the address bar.
 
 ![layout](https://img.shields.io/badge/layout-3_rows_×_N_columns-blue)
 ![method](https://img.shields.io/badge/method-autoconfig.cfg-orange)
 
-## Что это делает
+![Screenshot](docs/screenshot.png)
 
-Floorp по умолчанию отображает вкладки вертикально в боковой панели. Данная кастомизация:
+[Документация на русском / Russian documentation](README.ru.md)
 
-- Переносит панель вкладок наверх (над адресной строкой)
-- Располагает обычные вкладки в сетке **3 строки × N колонок** (количество колонок адаптируется к ширине окна)
-- Располагает закреплённые (pinned) вкладки в отдельной сетке слева (иконки без текста)
-- Переносит кнопки sidebar (расширения, история и т.д.) в правую часть панели вкладок
-- Добавляет drag-and-drop перемещение вкладок внутри сетки
+## What it does
 
-## Варианты установки
+Floorp displays tabs vertically in a sidebar by default. This customization:
 
-В проекте два варианта, различающихся способом загрузки:
+- Moves the tab panel above the address bar
+- Arranges regular tabs in a **3 rows × N columns** grid (column count adapts to window width)
+- Arranges pinned tabs in a separate icon-only grid on the left
+- Relocates sidebar buttons (extensions, history, etc.) to the right side of the tab panel
+- Adds drag-and-drop tab reordering within the grid
+
+## Installation variants
+
+The project contains two variants with different loading mechanisms:
 
 | | Variant 1 (profile) | Variant 2 (system) |
 |---|---|---|
-| **Директория** | `variant-1-profile/` | `variant-2-system/` |
-| **Куда ставится** | Профиль пользователя (`~/.floorp/*/chrome/`) | Системная директория (`/usr/lib/floorp/`) |
-| **Загрузка CSS** | `nsIStyleSheetService` (AGENT_SHEET) | Чтение файла + инжекция `<style>` |
-| **Загрузка JS** | `Services.scriptloader.loadSubScript` | Встроен в `autoconfig.cfg` |
-| **Сетка** | Фиксированная (6 колонок × 3 строки) | Адаптивная (`auto-fill`) |
-| **Статус** | Устаревший, не развивается | **Актуальный** |
+| **Directory** | `variant-1-profile/` | `variant-2-system/` |
+| **Install location** | User profile (`~/.floorp/*/chrome/`) | System directory (`/usr/lib/floorp/`) |
+| **CSS loading** | `nsIStyleSheetService` (AGENT_SHEET) | File read + `<style>` injection |
+| **JS loading** | `Services.scriptloader.loadSubScript` | Embedded in `autoconfig.cfg` |
+| **Grid** | Fixed (6 columns × 3 rows) | Adaptive (`auto-fill`) |
+| **Status** | Legacy, unmaintained | **Active** |
 
-**Рекомендуется variant-2-system** — он содержит все последние исправления.
+**Variant-2-system is recommended** — it contains all the latest fixes.
 
-Файлы в корне проекта (`horizontal_tabs.js`, `horizontal_tabs.css`, `autoconfig.cfg`, `autoconfig.js`) — копии variant-1, сохранены для истории.
+Root-level files (`horizontal_tabs.js`, `horizontal_tabs.css`, `autoconfig.cfg`, `autoconfig.js`) are copies of variant-1, kept for history.
 
-## Установка (variant-2-system)
+## Installation (variant-2-system)
 
-### Требования
+### Requirements
 
-- Floorp (тестировалось на 11.x)
-- Включённые вертикальные вкладки: `about:config` → `sidebar.verticalTabs` = `true`
-- Права root (для записи в `/usr/lib/floorp/`)
+- Floorp (tested on 11.x)
+- Vertical tabs enabled: `about:config` → `sidebar.verticalTabs` = `true`
+- Root access (to write to `/usr/lib/floorp/`)
 
-### Автоматический деплой
+### Automated deploy
 
 ```bash
 sudo bash deploy-variant-2.sh
 ```
 
-Скрипт копирует три файла в `/usr/lib/floorp/`:
+The script copies three files to `/usr/lib/floorp/`:
 
-| Исходный файл | Назначение |
+| Source file | Destination |
 |---|---|
 | `variant-2-system/autoconfig.js` | `/usr/lib/floorp/defaults/pref/autoconfig.js` |
 | `variant-2-system/autoconfig.cfg` | `/usr/lib/floorp/autoconfig.cfg` |
 | `variant-2-system/horizontal_tabs.css` | `/usr/lib/floorp/horizontal_tabs.css` |
 
-### Ручная установка
+### Manual installation
 
-1. Скопировать `autoconfig.js` в `<floorp>/defaults/pref/`
-2. Скопировать `autoconfig.cfg` и `horizontal_tabs.css` в `<floorp>/`
-3. Убедиться, что права на файлы `644`
-4. Перезапустить Floorp
+1. Copy `autoconfig.js` to `<floorp>/defaults/pref/`
+2. Copy `autoconfig.cfg` and `horizontal_tabs.css` to `<floorp>/`
+3. Ensure file permissions are `644`
+4. Restart Floorp
 
-### Удаление
+### Uninstall
 
-Удалить три файла из `/usr/lib/floorp/` и перезапустить браузер:
+Remove the three files from `/usr/lib/floorp/` and restart the browser:
 
 ```bash
 sudo rm /usr/lib/floorp/autoconfig.cfg
@@ -71,65 +75,69 @@ sudo rm /usr/lib/floorp/horizontal_tabs.css
 sudo rm /usr/lib/floorp/defaults/pref/autoconfig.js
 ```
 
-## Настройка
+## Configuration
 
-CSS-переменные в `horizontal_tabs.css` (секция `:root`):
+CSS variables in `horizontal_tabs.css` (`:root` section):
 
-| Переменная | По умолчанию | Описание |
+| Variable | Default | Description |
 |---|---|---|
-| `--htabs-panel-height` | `120px` | Высота всей панели вкладок |
-| `--htabs-tab-width` | `150px` | Ширина обычной вкладки |
-| `--htabs-tab-height` | `40px` | Высота обычной вкладки |
-| `--htabs-pinned-cell` | `40px` | Размер ячейки закреплённой вкладки |
-| `--htabs-pinned-icon` | `28px` | Размер иконки закреплённой вкладки |
-| `--htabs-selected` | `rgba(100, 140, 110, 0.30)` | Фон выделенной вкладки |
-| `--htabs-hover` | `rgba(180, 170, 100, 0.20)` | Фон при наведении |
-| `--htabs-border` | `rgba(128, 128, 128, 0.3)` | Цвет границ между вкладками |
-| `--htabs-border-accent` | `rgba(128, 128, 128, 0.5)` | Цвет акцентных разделителей |
+| `--htabs-panel-height` | `120px` | Total tab panel height |
+| `--htabs-tab-width` | `150px` | Regular tab width |
+| `--htabs-tab-height` | `40px` | Regular tab height |
+| `--htabs-pinned-cell` | `40px` | Pinned tab cell size |
+| `--htabs-pinned-icon` | `28px` | Pinned tab icon size |
+| `--htabs-selected` | `rgba(100, 140, 110, 0.30)` | Selected tab background |
+| `--htabs-hover` | `rgba(180, 170, 100, 0.20)` | Hover background |
+| `--htabs-border` | `rgba(128, 128, 128, 0.3)` | Tab border color |
+| `--htabs-border-accent` | `rgba(128, 128, 128, 0.5)` | Accent separator color |
 
-## Ограничения
+## Limitations
 
-- **Максимум вкладок** — кнопка «+» скрывается, когда сетка заполнена (3 строки × N колонок в зависимости от ширины окна). Новые вкладки всё ещё можно открывать через Ctrl+T или контекстное меню.
-- **Привязка к внутренним API Floorp/Firefox** — код использует monkey-patching внутренних объектов (`tabDragAndDrop`) и обращается к внутренним DOM-элементам (`#tabbrowser-tabs`, `#pinned-tabs-container`, Shadow DOM). Обновления Floorp могут сломать кастомизацию.
-- **Только Linux** — деплой-скрипт рассчитан на `/usr/lib/floorp/`. На других ОС пути отличаются.
-- **Требует `sidebar.verticalTabs = true`** — если настройка выключена, скрипт не инициализируется (feature detection). Это не баг: кастомизация трансформирует именно вертикальные вкладки в горизонтальные.
-- **Drag-and-drop** — работает для одиночных вкладок. Перетаскивание группы вкладок (multi-select drag) не поддерживается полноценно.
-- **Не плагин** — WebExtensions API не предоставляет доступ к XUL DOM браузера, поэтому реализация невозможна в виде расширения.
+- **Tab limit** — the "+" button is hidden when the grid is full (3 rows × N columns depending on window width). New tabs can still be opened via Ctrl+T or context menu.
+- **Tied to Floorp/Firefox internals** — the code monkey-patches internal objects (`tabDragAndDrop`) and accesses internal DOM elements (`#tabbrowser-tabs`, `#pinned-tabs-container`, Shadow DOM). Floorp updates may break the customization.
+- **Linux only** — the deploy script targets `/usr/lib/floorp/`. Paths differ on other OSes.
+- **Requires `sidebar.verticalTabs = true`** — if the setting is off, the script does not initialize (feature detection). This is by design: the customization transforms vertical tabs into horizontal ones.
+- **Drag-and-drop** — works for single tabs. Multi-select tab dragging is not fully supported.
+- **Not a plugin** — the WebExtensions API does not provide access to the browser's XUL DOM, making an extension-based implementation impossible.
 
-## Диагностика
+## Diagnostics
 
-При старте скрипт записывает диагностические флаги в `about:config`:
+The script writes diagnostic flags to `about:config` on startup:
 
-| Ключ | Значение | Описание |
+| Key | Value | Description |
 |---|---|---|
-| `htabs.diag.1_start` | `true` | autoconfig.cfg начал выполнение |
-| `htabs.diag.2_css_read` | `true` | CSS-файл прочитан |
-| `htabs.diag.2_css_missing` | `true` | CSS-файл не найден |
-| `htabs.diag.3_observer` | `true` | Window observer зарегистрирован |
-| `htabs.diag.4_verticalTabs_enabled` | `true` | `sidebar.verticalTabs = true`, инициализация запущена |
-| `htabs.diag.4_verticalTabs_disabled` | `true` | `sidebar.verticalTabs = false`, инициализация пропущена |
-| `htabs.diag.5_init_done` | `true` | Все модули выполнены |
+| `htabs.diag.1_start` | `true` | autoconfig.cfg started execution |
+| `htabs.diag.2_css_read` | `true` | CSS file read successfully |
+| `htabs.diag.2_css_missing` | `true` | CSS file not found |
+| `htabs.diag.3_observer` | `true` | Window observer registered |
+| `htabs.diag.4_verticalTabs_enabled` | `true` | `sidebar.verticalTabs = true`, initialization started |
+| `htabs.diag.4_verticalTabs_disabled` | `true` | `sidebar.verticalTabs = false`, initialization skipped |
+| `htabs.diag.5_init_done` | `true` | All modules executed |
 
-Ошибки модулей выводятся в Browser Console (`Ctrl+Shift+J`) с префиксом `htabs`.
+Module errors are logged to the Browser Console (`Ctrl+Shift+J`) with the `htabs` prefix.
 
-## Структура проекта
+## Project structure
 
 ```
-floorp-custom/
-├── README.md                    # Этот файл
-├── ARCHITECTURE.md              # Техническая архитектура
-├── deploy-variant-2.sh          # Скрипт деплоя
-├── variant-2-system/            # Актуальный вариант
-│   ├── autoconfig.js            # Указатель на autoconfig.cfg
-│   ├── autoconfig.cfg           # JS: модули, оркестратор, DnD
-│   └── horizontal_tabs.css      # CSS: сетка, стили вкладок
-├── variant-1-profile/           # Устаревший вариант (profile-based)
+floorp-horizontal-tabs/
+├── README.md                    # This file
+├── README.ru.md                 # Russian documentation
+├── ARCHITECTURE.md              # Technical architecture
+├── ARCHITECTURE.ru.md           # Technical architecture (Russian)
+├── deploy-variant-2.sh          # Deploy script
+├── docs/
+│   └── screenshot.png           # Screenshot
+├── variant-2-system/            # Active variant
+│   ├── autoconfig.js            # Pointer to autoconfig.cfg
+│   ├── autoconfig.cfg           # JS: modules, orchestrator, DnD
+│   └── horizontal_tabs.css      # CSS: grid, tab styles
+├── variant-1-profile/           # Legacy variant (profile-based)
 │   ├── autoconfig.cfg
 │   ├── autoconfig.js
 │   ├── horizontal_tabs.js
 │   └── horizontal_tabs.css
-├── horizontal_tabs.js           # Копия variant-1 (legacy)
-├── horizontal_tabs.css          # Копия variant-1 (legacy)
-├── autoconfig.cfg               # Копия variant-1 (legacy)
-└── autoconfig.js                # Копия variant-1 (legacy)
+├── horizontal_tabs.js           # Copy of variant-1 (legacy)
+├── horizontal_tabs.css          # Copy of variant-1 (legacy)
+├── autoconfig.cfg               # Copy of variant-1 (legacy)
+└── autoconfig.js                # Copy of variant-1 (legacy)
 ```
