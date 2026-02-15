@@ -90,7 +90,7 @@
   display: grid !important;
   grid-template-rows: repeat(3, var(--htabs-tab-height)) !important;
   grid-template-columns: repeat(auto-fill, var(--htabs-tab-width)) !important;
-  grid-auto-flow: column dense !important;
+  grid-auto-flow: row dense !important;
 }
 
 #tabbrowser-arrowscrollbox::part(scrollbutton-up),
@@ -165,8 +165,8 @@
   margin-right: -1px !important;
 }
 
-/* Убрать нижнюю границу у третьей строки */
-.tabbrowser-tab:not([pinned]):nth-child(3n+3) {
+/* Bottom border removed for last row via JS [data-htabs-lastrow] */
+.tabbrowser-tab:not([pinned])[data-htabs-lastrow] {
   border-bottom: none !important;
 }
 
@@ -210,17 +210,17 @@
   display: none !important;
 }
 
-/* First column: gradient from splitter */
-.tabbrowser-tab:not([pinned]):nth-child(-n+3) {
+/* First column: gradient from splitter — via JS [data-htabs-firstcol] */
+.tabbrowser-tab:not([pinned])[data-htabs-firstcol] {
   padding-left: var(--htabs-firstcol-pad) !important;
   background-image: linear-gradient(to right, var(--htabs-border), transparent var(--htabs-firstcol-pad)) !important;
 }
 
-.tabbrowser-tab:not([pinned]):nth-child(-n+3)[selected] {
+.tabbrowser-tab:not([pinned])[data-htabs-firstcol][selected] {
   background: linear-gradient(to right, var(--htabs-border), var(--htabs-selected) var(--htabs-firstcol-pad)) var(--htabs-selected) !important;
 }
 
-.tabbrowser-tab:not([pinned]):nth-child(-n+3):hover {
+.tabbrowser-tab:not([pinned])[data-htabs-firstcol]:hover {
   background: linear-gradient(to right, var(--htabs-border), var(--htabs-hover) var(--htabs-firstcol-pad)) var(--htabs-hover) !important;
 }
 
